@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1" />
+  <title>Día de las Flores Amarillas — feliz día de las flores amarillas , te amo mi niña🩷🌻</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --bg1: #FFB6C1;
+      --bg2: #E6E6FA;
+      --text-color: #333;
+      --card-width: min(92vw, 420px);
+    }
+
+    *{box-sizing:border-box;margin:0;padding:0}
+    html,body,#stage{height:100%}
+    body{
+      font-family: 'Playfair Display', serif;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      background:
+        radial-gradient(circle at 30% 20%, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0.06) 6%),
+        radial-gradient(circle at 80% 80%, rgba(255,255,255,0.08) 0%, transparent 8%),
+        radial-gradient(circle at 50% 50%, var(--bg1) 0%, var(--bg2) 100%);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      overflow:hidden;
+    }
+
+    .stage{
+      width:100%;
+      height:100%;
+      position:relative;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:4vh 4vw;
+      cursor: pointer;
+    }
+
+    .flowers-layer{
+      position:absolute;
+      inset:0;
+      pointer-events:none;
+      overflow:hidden;
+      z-index:0;
+    }
+
+    .flower{
+      position:absolute;
+      will-change:transform,opacity;
+      transform-origin:center center;
+      pointer-events:none;
+      z-index:0;
+    }
+
+    @keyframes floatUp {
+      0% {
+        transform: translateY(0) scale(var(--scale,1)) rotate(var(--rot-start,0deg));
+        opacity: var(--start-opacity, 1);
+      }
+      30% { opacity: calc(var(--start-opacity,1) * 0.95); }
+      100% {
+        transform: translateY(calc(-110vh - var(--extra,0px))) scale(var(--scale,1)) rotate(var(--rot-end,0deg));
+        opacity: 0;
+      }
+    }
+
+    .card{
+      width:var(--card-width);
+      max-width:95vw;
+      background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+      border-radius:18px;
+      padding: clamp(20px, 4.5vw, 32px);
+      box-shadow: 0 8px 30px rgba(10,10,20,0.18);
+      backdrop-filter: blur(6px);
+      z-index:2;
+      position:relative;
+      text-align:center;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      overflow:visible;
+      animation: cardIn 700ms cubic-bezier(.2,.9,.3,1) both;
+      flex-direction: column;
+    }
+
+    @keyframes cardIn {
+      0% { transform: scale(0.96); opacity:0; }
+      60% { transform: scale(1.03); opacity:1; }
+      100% { transform: scale(1); }
+    }
+
+    .message{
+      font-size: clamp(1.5rem, 6vw, 2.5rem);
+      line-height:1.2;
+      color:var(--text-color);
+      letter-spacing: -0.01em;
+      display:inline-block;
+      white-space:pre-wrap;
+      word-break:break-word;
+      z-index:3;
+    }
+
+    .message .char{
+      display:inline-block;
+      opacity:0;
+      transform: translateY(6px);
+      animation: charIn 600ms ease forwards;
+    }
+
+    @keyframes charIn {
+      to { opacity:1; transform: translateY(0); }
+    }
+
+    @media (max-width:420px){
+      .card{ border-radius:14px; padding:18px; }
+      .message{ font-size:clamp(1.25rem, 6vw, 2rem); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .flower { animation: none !important; transition:none !important; opacity:0.9 !important; transform:none !important; }
+      .card { animation: none !important; }
+      .message .char{ animation:none; opacity:1; transform:none; }
+    }
+
+    /* Imagen en la tarjeta */
+    .card img{
+      max-width:80%;
+      border-radius:12px;
+      margin-top: 16px;
+    }
+  </style>
+</head>
+<body>
+  <main id="stage" class="stage" aria-live="polite">
+    <div id="flowers-layer" class="flowers-layer" aria-hidden="true"></div>
+
+    <section class="card" role="article" aria-label="Mensaje de día de las flores amarillas">
+      <h1 class="message" id="message">Feliz Día de las Flores Amarillas, te amo mi niña🩷🌻</h1>
+      <!-- Imagen opcional -->
+      <img id="custom-image" src="" alt="Imagen personalizada" style="display:none;" />
+    </section>
+  </main>
+
+  <script>
+    const CONFIG = {
+      initialFlowers: 14,
+      maxFlowers: 32,
+      spawnInterval: 900,
+      minDuration: 6000,
+      maxDuration: 14000,
+      burstCount: 25
+    };
+
+    const flowersLayer = document.getElementById('flowers-layer');
+    const messageEl = document.getElementById('message');
+    const stage = document.getElementById('stage');
+    const customImage = document.getElementById('custom-image');
+
+    function rand(min, max) { return Math.random() * (max - min) + min; }
+    function rndInt(min, max) { return Math.floor(rand(min, max + 1)); }
+
+    function createFlowerSVG(size = 36, petalColor = '#FFD24D', centerColor = '#FFC857', opacity = 1) {
+      const cx = size / 2, cy = size / 2;
+      const offsets = [
+        [cx, cy - size * 0.28],
+        [cx + size * 0.20, cy - size * 0.08],
+        [cx + size * 0.12, cy + size * 0.22],
+        [cx - size * 0.12, cy + size * 0.22],
+        [cx - size * 0.22, cy - size * 0.08]
+      ];
+      const petalsSvg = offsets.map(o => `<circle cx="${o[0]}" cy="${o[1]}" r="${size * 0.22}" />`).join('');
+      return `
+        <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <g fill="${petalColor}" opacity="${opacity}">
+            ${petalsSvg}
+          </g>
+          <circle cx="${cx}" cy="${cy}" r="${size * 0.18}" fill="${centerColor}" opacity="${Math.min(1, opacity + 0.05)}"/>
+        </svg>
+      `;
+    }
+
+    function spawnFlower(options = {}) {
+      const current = flowersLayer.querySelectorAll('.flower').length;
+      if (current >= CONFIG.maxFlowers) return null;
+
+      const el = document.createElement('div');
+      el.className = 'flower';
+      const size = options.size ?? rndInt(18, 58);
+      const opacity = options.opacity ?? parseFloat(rand(0.35, 0.95).toFixed(2));
+      const leftPct = options.left ?? rand(-6, 106);
+      const duration = options.duration ?? rndInt(CONFIG.minDuration, CONFIG.maxDuration);
+      const delay = options.delay ?? rndInt(0, 1600);
+      const rotStart = rndInt(-20, 20);
+      const rotEnd = rndInt(-40, 40);
+      const extra = rndInt(0, 80);
+
+      el.innerHTML = createFlowerSVG(size, '#FFD24D', '#FFC857', opacity);
+      el.style.left = `${leftPct}%`;
+      el.style.bottom = `${-size - 12}px`;
+      el.style.width = `${size}px`;
+      el.style.height = `${size}px`;
+      el.style.opacity = opacity;
+      el.style.transform = `translateY(0) scale(${rand(0.85, 1.15)}) rotate(${rotStart}deg)`;
+      el.style.setProperty('--scale', rand(0.85, 1.15));
+      el.style.setProperty('--start-opacity', opacity);
+      el.style.setProperty('--rot-start', `${rotStart}deg`);
+      el.style.setProperty('--rot-end', `${rotEnd}deg`);
+      el.style.setProperty('--extra', `${extra}px`);
+      el.style.animation = `floatUp ${duration}ms linear ${delay}ms forwards`;
+
+      el.addEventListener('animationend', () => { try { el.remove(); } catch(e){} }, { once:true });
+
+      flowersLayer.appendChild(el);
+      return el;
+    }
+
+    function populateInitialFlowers(n = CONFIG.initialFlowers) {
+      for (let i = 0; i < n; i++) {
+        spawnFlower({ left: rand(2,98), size: rndInt(20,56), opacity: rand(0.35,0.95), delay: rndInt(0,6000), duration: rndInt(CONFIG.minDuration, CONFIG.maxDuration)});
+      }
+    }
+
+    let spawnTimer = null;
+    function startSpawner() {
+      spawnTimer = setInterval(() => {
+        const current = flowersLayer.querySelectorAll('.flower').length;
+        if (current < CONFIG.initialFlowers) {
+          spawnFlower();
+          if (Math.random() > 0.6) spawnFlower();
+        } else if (Math.random() < 0.25) spawnFlower();
+      }, CONFIG.spawnInterval);
+    }
+
+    function setupTypewriterWords() {
+      const text = messageEl.textContent.trim();
+      const words = text.split(' ');
+      messageEl.textContent = '';
+      let delay = 0;
+      const baseDelay = 150;
+
+      words.forEach(word => {
+        const span = document.createElement('span');
+        span.className = 'char';
+        span.textContent = word + ' ';
+        span.style.animationDelay = `${delay}ms`;
+        messageEl.appendChild(span);
+        delay += baseDelay;
+      });
+    }
+
+    function burstAt(x, y) {
+      const rect = flowersLayer.getBoundingClientRect();
+      const relX = ((x - rect.left) / rect.width) * 100;
+      const relY_px = rect.height - (y - rect.top);
+
+      for (let i = 0; i < CONFIG.burstCount; i++) {
+        const angle = rand(0, Math.PI * 2);
+        const dist = rand(12, 60);
+        const leftOffsetPct = (dist * Math.cos(angle)) / rect.width * 100;
+        const spawnLeft = Math.min(105, Math.max(-10, relX + leftOffsetPct));
+        const size = rndInt(20,60);
+        const opacity = rand(0.6,1);
+        const dur = rndInt(2500,9000);
+        const delay = rndInt(0,100);
+
+        const f = spawnFlower({ left: spawnLeft, size, opacity, duration: dur, delay });
+        if(f){
+          const bottomPx = Math.max(-60, relY_px - rand(-30,30));
+          f.style.bottom = `${bottomPx}px`;
+          f.style.setProperty('--rot-start', `${rndInt(-60,60)}deg`);
+          f.style.setProperty('--rot-end', `${rndInt(-120,120)}deg`);
+        }
+      }
+    }
+
+    function setupInteraction() {
+      const handler = (e) => {
+        let x, y;
+        if (e.touches && e.touches[0]) { x = e.touches[0].clientX; y = e.touches[0].clientY; }
+        else { x = e.clientX; y = e.clientY; }
+        burstAt(x, y);
+      };
+      stage.addEventListener('touchstart', handler, { passive:true });
+      stage.addEventListener('click', handler);
+    }
+
+    function init() {
+      const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (reduce) { CONFIG.initialFlowers = 6; CONFIG.maxFlowers = 10; CONFIG.burstCount = 8; }
+
+      setupTypewriterWords();
+      populateInitialFlowers(CONFIG.initialFlowers);
+      startSpawner();
+      setupInteraction();
+
+      // ejemplo: cargar imagen (descomenta y pon tu ruta)
+      // customImage.src = 'ruta_de_tu_imagen.jpg';
+      // customImage.style.display = 'block';
+
+      window.addEventListener('pagehide', () => { if(spawnTimer) clearInterval(spawnTimer); });
+    }
+
+    if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded', init);}
+    else{init();}
+  </script>
+</body>
+</html>
